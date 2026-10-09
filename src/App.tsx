@@ -12,30 +12,51 @@ import {
   TaskStatus,
   TimeAperture,
   GanttFilterState,
+  TeamMember,
+  JiraConfig,
 } from './types/gantt';
-import { INITIAL_PROJECTS } from './data/initialData';
+import {
+  INITIAL_PROJECTS,
+  INITIAL_TEAM_MEMBERS,
+  INITIAL_JIRA_CONFIG,
+} from './data/initialData';
 import {
   getTimelineBounds,
   generateTimelineColumns,
+  getCurrentQuarterString,
 } from './utils/dateUtils';
 import { TopBar } from './components/TopBar';
 import { GanttControls } from './components/GanttControls';
 import { GanttView } from './components/GanttView';
 import { TableView } from './components/TableView';
+import { MetricsView } from './components/MetricsView';
 import { TaskModal } from './components/TaskModal';
 import { ProjectModal } from './components/ProjectModal';
 import { JsonEditorModal } from './components/JsonEditorModal';
+import { SettingsModal } from './components/SettingsModal';
 
-const STORAGE_KEY = 'gantt_planner_projects_v1';
+const STORAGE_KEY = 'gantt_planner_projects_v5';
+const TEAM_STORAGE_KEY = 'gantt_team_members_v2';
+const JIRA_STORAGE_KEY = 'gantt_jira_config_v2';
 
 export default function App() {
+  const currentQuarter = useMemo(() => getCurrentQuarterString(), []);
+
   // Load persistent projects from localStorage or default
   const [projects, setProjects] = useState<Project[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (
+          Array.isArray(parsed) &&
+          parsed.length >= 10 &&
+          parsed[0]?.quarter &&
+          parsed[0]?.size &&
+          parsed[0]?.initiativeType
+        ) {
+          return parsed;
+        }
       }
     } catch (e) {
       console.error('Error loading saved projects', e);
@@ -43,7 +64,7 @@ export default function App() {
     return INITIAL_PROJECTS;
   });
 
-  // Save to localStorage on change
+  // Save projects to localStorage on change
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
@@ -52,8 +73,52 @@ export default function App() {
     }
   }, [projects]);
 
+  // Team members configuration state
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => {
+    try {
+      const saved = localStorage.getItem(TEAM_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Error loading team members', e);
+    }
+    return INITIAL_TEAM_MEMBERS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(teamMembers));
+    } catch (e) {
+      console.error('Error saving team members', e);
+    }
+  }, [teamMembers]);
+
+  // Jira config state
+  const [jiraConfig, setJiraConfig] = useState<JiraConfig>(() => {
+    try {
+      const saved = localStorage.getItem(JIRA_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.domain) return parsed;
+      }
+    } catch (e) {
+      console.error('Error loading jira config', e);
+    }
+    return INITIAL_JIRA_CONFIG;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(JIRA_STORAGE_KEY, JSON.stringify(jiraConfig));
+    } catch (e) {
+      console.error('Error saving jira config', e);
+    }
+  }, [jiraConfig]);
+
   // Views & Aperture
-  const [currentView, setCurrentView] = useState<'gantt' | 'table' | 'json'>('gantt');
+  const [currentView, setCurrentView] = useState<'gantt' | 'table' | 'metrics' | 'json'>('gantt');
   const [aperture, setAperture] = useState<TimeAperture>('sprint'); // Defaults to 2-week Sprint
 
   // Zoom level (column width in pixels)
@@ -80,13 +145,15 @@ export default function App() {
     setZoomLevel((prev) => Math.min(360, Math.max(90, prev + delta)));
   };
 
-  // Filter state
+  // Filter state (Defaults to the current Quarter in course!)
   const [filters, setFilters] = useState<GanttFilterState>({
     search: '',
     assignee: '',
     status: '',
     stage: '',
     projectId: '',
+    quarter: currentQuarter,
+    initiativeType: '',
   });
 
   const handleFilterChange = (partial: Partial<GanttFilterState>) => {
@@ -100,8 +167,22 @@ export default function App() {
       status: '',
       stage: '',
       projectId: '',
+      quarter: currentQuarter,
+      initiativeType: '',
     });
   };
+
+  // Available Quarters extracted from projects
+  const availableQuarters = useMemo(() => {
+    const quarters = new Set<string>();
+    quarters.add(currentQuarter);
+    projects.forEach((p) => {
+      if (p.quarter && p.quarter !== 'Sin Asignar') {
+        quarters.add(p.quarter);
+      }
+    });
+    return Array.from(quarters).sort();
+  }, [projects, currentQuarter]);
 
   // Accordion expansion state
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(() => {
@@ -121,7 +202,7 @@ export default function App() {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(() => {
     const set = new Set<string>();
     INITIAL_PROJECTS.forEach((p) => {
-      p.tasks.forEach((t) => {
+      p.tasks?.forEach((t) => {
         if (t.subtasks && t.subtasks.length > 0) {
           set.add(t.id);
         }
@@ -130,6 +211,7 @@ export default function App() {
     return set;
   });
 
+  // Toggle handlers
   const toggleProject = (projectId: string) => {
     setExpandedProjects((prev) => {
       const next = new Set(prev);
@@ -139,7 +221,7 @@ export default function App() {
     });
   };
 
-  const toggleStage = (projectId: string, stage: TaskStage) => {
+  const toggleStage = (projectId: string, stage: string) => {
     const key = `${projectId}_${stage}`;
     setExpandedStages((prev) => {
       const next = new Set(prev);
@@ -166,7 +248,7 @@ export default function App() {
       ['backlog', 'relevamiento', 'qa', 'produccion'].forEach((st) => {
         allStg.add(`${p.id}_${st}`);
       });
-      p.tasks.forEach((t) => {
+      p.tasks?.forEach((t) => {
         if (t.subtasks?.length) allTsk.add(t.id);
       });
     });
@@ -195,10 +277,14 @@ export default function App() {
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
 
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
-  // Extract all unique assignees across projects, tasks and subtasks
+  // Extract all unique assignees across projects, tasks, subtasks AND configured team members!
   const allAssignees = useMemo(() => {
     const set = new Set<string>();
+    teamMembers.forEach((m) => {
+      if (m.name && m.active) set.add(m.name);
+    });
     projects.forEach((p) => {
       if (p.projectLead) set.add(p.projectLead);
       p.tasks?.forEach((t) => {
@@ -209,7 +295,7 @@ export default function App() {
       });
     });
     return Array.from(set).sort();
-  }, [projects]);
+  }, [projects, teamMembers]);
 
   // Compute Timeline columns dynamically
   const timelineColumns = useMemo(() => {
@@ -233,7 +319,25 @@ export default function App() {
   const filteredProjects = useMemo(() => {
     return projects
       .filter((p) => {
+        // Project ID
         if (filters.projectId && p.id !== filters.projectId) return false;
+
+        // Quarter filter
+        if (filters.quarter && filters.quarter !== '__ALL__') {
+          if (filters.quarter === '__UNASSIGNED__') {
+            if (p.quarter && p.quarter !== 'Sin Asignar') return false;
+          } else {
+            if ((p.quarter || 'Sin Asignar') !== filters.quarter) return false;
+          }
+        }
+
+        // Initiative type filter (Negocio vs Interna)
+        if (filters.initiativeType && filters.initiativeType !== '') {
+          if ((p.initiativeType || 'negocio') !== filters.initiativeType) {
+            return false;
+          }
+        }
+
         return true;
       })
       .map((p) => {
@@ -310,128 +414,132 @@ export default function App() {
       parentTaskId,
       task,
       isSubtask,
+      defaultStage: task.stage,
     });
     setIsTaskModalOpen(true);
   };
 
   const handleSaveTask = (
-    targetProjectId: string,
+    projectId: string,
     taskData: Partial<Task>,
     parentTaskId?: string,
     isSubtask = false
   ) => {
+    const editingId = taskData.id;
     setProjects((prev) => {
-      return prev.map((proj) => {
-        if (proj.id !== targetProjectId) return proj;
+      return prev.map((p) => {
+        if (p.id !== projectId) return p;
 
         if (isSubtask && parentTaskId) {
-          // Creating or updating subtask
-          const updatedTasks = proj.tasks.map((task) => {
-            if (task.id !== parentTaskId) return task;
+          // Saving a subtask
+          const nextTasks = (p.tasks || []).map((t) => {
+            if (t.id !== parentTaskId) return t;
 
-            let updatedSubtasks = [...(task.subtasks || [])];
-            if (taskData.id) {
-              // Edit existing subtask
-              updatedSubtasks = updatedSubtasks.map((st) =>
-                st.id === taskData.id ? ({ ...st, ...taskData } as Subtask) : st
-              );
+            if (editingId) {
+              // Update existing subtask
+              const nextSubtasks = (t.subtasks || []).map((st) => {
+                if (st.id === editingId) {
+                  return { ...st, ...taskData } as Subtask;
+                }
+                return st;
+              });
+              return { ...t, subtasks: nextSubtasks };
             } else {
-              // New subtask
-              const newSub: Subtask = {
+              // Create new subtask
+              const newSubtask: Subtask = {
                 id: `sub-${Date.now()}`,
                 title: taskData.title || 'Nueva Subtarea',
                 type: taskData.type || 'Tarea',
-                stage: taskData.stage || task.stage,
-                startDate: taskData.startDate || task.startDate,
-                endDate: taskData.endDate || task.endDate,
-                assignee: taskData.assignee || task.assignee,
-                assigneeAvatar: taskData.assignee?.substring(0, 2).toUpperCase(),
-                status: (taskData.status as TaskStatus) || 'pendiente',
+                stage: taskData.stage || t.stage,
+                startDate: taskData.startDate || t.startDate,
+                endDate: taskData.endDate || t.endDate,
+                assignee: taskData.assignee || t.assignee,
+                assigneeAvatar: (taskData.assignee || t.assignee)
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .substring(0, 2)
+                  .toUpperCase(),
+                status: taskData.status || 'pendiente',
                 progress: taskData.progress ?? 0,
                 size: taskData.size || 'S',
-                commitment: taskData.commitment || task.commitment,
+                commitment: taskData.commitment || t.commitment,
                 notes: taskData.notes,
               };
-              updatedSubtasks.push(newSub);
+              return {
+                ...t,
+                subtasks: [...(t.subtasks || []), newSubtask],
+              };
             }
-
-            // Recalculate parent progress
-            const avgProgress =
-              updatedSubtasks.length > 0
-                ? Math.round(
-                    updatedSubtasks.reduce((a, b) => a + b.progress, 0) /
-                      updatedSubtasks.length
-                  )
-                : task.progress;
-
-            return {
-              ...task,
-              subtasks: updatedSubtasks,
-              progress: avgProgress,
-            };
           });
-
-          return { ...proj, tasks: updatedTasks };
+          return { ...p, tasks: nextTasks };
         } else {
-          // Creating or updating top-level task
-          let updatedTasks = [...proj.tasks];
-          if (taskData.id) {
-            // Edit existing
-            updatedTasks = updatedTasks.map((t) =>
-              t.id === taskData.id ? ({ ...t, ...taskData } as Task) : t
-            );
+          // Saving a main task
+          if (editingId) {
+            const nextTasks = (p.tasks || []).map((t) => {
+              if (t.id === editingId) {
+                return { ...t, ...taskData } as Task;
+              }
+              return t;
+            });
+            return { ...p, tasks: nextTasks };
           } else {
-            // New task
             const newTask: Task = {
               id: `task-${Date.now()}`,
               title: taskData.title || 'Nueva Tarea',
               type: taskData.type || 'Historia',
-              initiative: taskData.initiative || 'Proyecto General',
-              epic: taskData.epic || 'Módulo Principal',
+              initiative: taskData.initiative || p.name,
+              epic: taskData.epic || 'General',
               stage: taskData.stage || 'backlog',
-              startDate: taskData.startDate || '2026-10-12',
-              endDate: taskData.endDate || '2026-10-26',
-              assignee: taskData.assignee || proj.projectLead,
-              assigneeAvatar: taskData.assignee?.substring(0, 2).toUpperCase(),
-              status: (taskData.status as TaskStatus) || 'pendiente',
+              startDate: taskData.startDate || '2026-10-01',
+              endDate: taskData.endDate || '2026-10-15',
+              assignee: taskData.assignee || p.projectLead,
+              assigneeAvatar: (taskData.assignee || p.projectLead)
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .substring(0, 2)
+                .toUpperCase(),
+              status: taskData.status || 'pendiente',
               progress: taskData.progress ?? 0,
               size: taskData.size || 'M',
               commitment: taskData.commitment || 'Sprint 1',
-              color: taskData.color,
               notes: taskData.notes,
               subtasks: [],
             };
-            updatedTasks.push(newTask);
+            return {
+              ...p,
+              tasks: [...(p.tasks || []), newTask],
+            };
           }
-          return { ...proj, tasks: updatedTasks };
         }
       });
     });
   };
 
   const handleDeleteTask = (
-    targetProjectId: string,
+    projectId: string,
     taskId: string,
     isSubtask = false,
     parentTaskId?: string
   ) => {
     setProjects((prev) => {
-      return prev.map((proj) => {
-        if (proj.id !== targetProjectId) return proj;
+      return prev.map((p) => {
+        if (p.id !== projectId) return p;
 
         if (isSubtask && parentTaskId) {
-          const updatedTasks = proj.tasks.map((task) => {
-            if (task.id !== parentTaskId) return task;
+          const nextTasks = (p.tasks || []).map((t) => {
+            if (t.id !== parentTaskId) return t;
             return {
-              ...task,
-              subtasks: task.subtasks.filter((st) => st.id !== taskId),
+              ...t,
+              subtasks: (t.subtasks || []).filter((st) => st.id !== taskId),
             };
           });
-          return { ...proj, tasks: updatedTasks };
+          return { ...p, tasks: nextTasks };
         } else {
           return {
-            ...proj,
-            tasks: proj.tasks.filter((t) => t.id !== taskId),
+            ...p,
+            tasks: (p.tasks || []).filter((t) => t.id !== taskId),
           };
         }
       });
@@ -439,52 +547,52 @@ export default function App() {
   };
 
   const handleQuickUpdateStatus = (
-    targetProjectId: string,
+    projectId: string,
     taskId: string,
     newStatus: TaskStatus,
     isSubtask = false,
     parentTaskId?: string
   ) => {
     setProjects((prev) => {
-      return prev.map((proj) => {
-        if (proj.id !== targetProjectId) return proj;
+      return prev.map((p) => {
+        if (p.id !== projectId) return p;
 
         if (isSubtask && parentTaskId) {
-          const updatedTasks = proj.tasks.map((task) => {
-            if (task.id !== parentTaskId) return task;
+          const nextTasks = (p.tasks || []).map((t) => {
+            if (t.id !== parentTaskId) return t;
             return {
-              ...task,
-              subtasks: task.subtasks.map((st) =>
-                st.id === taskId
-                  ? {
-                      ...st,
-                      status: newStatus,
-                      progress: newStatus === 'completado' ? 100 : st.progress,
-                    }
-                  : st
-              ),
+              ...t,
+              subtasks: (t.subtasks || []).map((st) => {
+                if (st.id === taskId) {
+                  return {
+                    ...st,
+                    status: newStatus,
+                    progress: newStatus === 'completado' ? 100 : st.progress,
+                  };
+                }
+                return st;
+              }),
             };
           });
-          return { ...proj, tasks: updatedTasks };
+          return { ...p, tasks: nextTasks };
         } else {
-          return {
-            ...proj,
-            tasks: proj.tasks.map((t) =>
-              t.id === taskId
-                ? {
-                    ...t,
-                    status: newStatus,
-                    progress: newStatus === 'completado' ? 100 : t.progress,
-                  }
-                : t
-            ),
-          };
+          const nextTasks = (p.tasks || []).map((t) => {
+            if (t.id === taskId) {
+              return {
+                ...t,
+                status: newStatus,
+                progress: newStatus === 'completado' ? 100 : t.progress,
+              };
+            }
+            return t;
+          });
+          return { ...p, tasks: nextTasks };
         }
       });
     });
   };
 
-  // Project modal actions
+  // Project management
   const handleOpenNewProject = () => {
     setEditingProject(undefined);
     setIsProjectModalOpen(true);
@@ -495,81 +603,89 @@ export default function App() {
     setIsProjectModalOpen(true);
   };
 
-  const handleSaveProject = (projectData: Partial<Project>) => {
-    setProjects((prev) => {
-      if (editingProject) {
-        return prev.map((p) =>
-          p.id === editingProject.id ? ({ ...p, ...projectData } as Project) : p
-        );
-      } else {
-        const newProj: Project = {
-          id: projectData.id || `proj-${Date.now()}`,
-          name: projectData.name || 'Nuevo Proyecto',
-          code: projectData.code || 'PRJ',
-          projectLead: projectData.projectLead || 'Responsable',
-          leadAvatar: projectData.projectLead?.substring(0, 2).toUpperCase(),
-          description: projectData.description || '',
-          color: projectData.color || '#2563EB',
-          tasks: [],
-        };
-        // Auto-expand new project
-        setExpandedProjects((exp) => new Set([...exp, newProj.id]));
-        return [...prev, newProj];
-      }
-    });
+  const handleSaveProject = (projectData: Partial<Project>, editingId?: string) => {
+    if (editingId) {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === editingId ? ({ ...p, ...projectData } as Project) : p))
+      );
+    } else {
+      const newProj: Project = {
+        id: `proj-${Date.now()}`,
+        name: projectData.name || 'Nuevo Proyecto',
+        code: projectData.code || 'PROJ',
+        projectLead: projectData.projectLead || 'Líder de Proyecto',
+        leadAvatar: (projectData.projectLead || 'LP')
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .substring(0, 2)
+          .toUpperCase(),
+        description: projectData.description || '',
+        color: projectData.color || '#2563EB',
+        size: projectData.size || 'M',
+        initiativeType: projectData.initiativeType || 'negocio',
+        quarter: projectData.quarter || currentQuarter,
+        quarterObjective: projectData.quarterObjective || '',
+        targetStageForQuarter: projectData.targetStageForQuarter || 'produccion',
+        tasks: [],
+      };
+      setProjects((prev) => [...prev, newProj]);
+      setExpandedProjects((prev) => new Set([...prev, newProj.id]));
+    }
   };
 
-  // JSON actions
+  // JSON editor apply
   const handleApplyJson = (newProjects: Project[]) => {
     setProjects(newProjects);
   };
 
   const handleResetDefault = () => {
-    if (confirm('¿Restaurar datos predeterminados de ejemplo? Se sobrescribirán los cambios.')) {
-      setProjects(INITIAL_PROJECTS);
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    setProjects(INITIAL_PROJECTS);
+    setTeamMembers(INITIAL_TEAM_MEMBERS);
+    setJiraConfig(INITIAL_JIRA_CONFIG);
   };
 
-  // Scroll to Today marker
+  // Center timeline on today
   const handleScrollToToday = () => {
-    // Finds elements with "Hoy" or current date
-    const todayEl = document.querySelector('.bg-rose-500');
+    const todayEl = document.getElementById('today-marker-line');
     if (todayEl) {
-      todayEl.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+      todayEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-50 font-sans">
-      {/* 1. Header conforming to Top Bar Contract */}
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans antialiased select-none">
+      {/* 1. Header Navigation Bar */}
       <TopBar
         currentView={currentView}
-        onViewChange={(v) => {
-          if (v === 'json') setIsJsonModalOpen(true);
-          else setCurrentView(v);
-        }}
+        onViewChange={setCurrentView}
         onNewTask={() => handleOpenNewTask()}
         onOpenJsonEditor={() => setIsJsonModalOpen(true)}
+        onOpenSettings={() => setIsSettingsModalOpen(true)}
+        isJiraConnected={jiraConfig.connected}
       />
 
-      {/* 2. Interactive Planning Controls Toolbar */}
-      <GanttControls
-        aperture={aperture}
-        onApertureChange={handleApertureChange}
-        zoomLevel={zoomLevel}
-        onZoomChange={handleZoomChange}
-        onScrollToToday={handleScrollToToday}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={handleResetFilters}
-        projects={projects}
-        allAssignees={allAssignees}
-        onExpandAll={handleExpandAll}
-        onCollapseAll={handleCollapseAll}
-        onNewProject={handleOpenNewProject}
-        onNewTask={() => handleOpenNewTask()}
-      />
+      {/* 2. Interactive Planning Controls Toolbar (for Gantt & Table) */}
+      {(currentView === 'gantt' || currentView === 'table') && (
+        <GanttControls
+          aperture={aperture}
+          onApertureChange={handleApertureChange}
+          zoomLevel={zoomLevel}
+          onZoomChange={handleZoomChange}
+          onScrollToToday={handleScrollToToday}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onResetFilters={handleResetFilters}
+          projects={projects}
+          allAssignees={allAssignees}
+          availableQuarters={availableQuarters}
+          currentQuarter={currentQuarter}
+          onExpandAll={handleExpandAll}
+          onCollapseAll={handleCollapseAll}
+          onNewProject={handleOpenNewProject}
+          onNewTask={() => handleOpenNewTask()}
+        />
+      )}
 
       {/* 3. Main Views Area */}
       <main className="flex-1 flex overflow-hidden relative">
@@ -608,6 +724,17 @@ export default function App() {
             onDeleteTask={handleDeleteTask}
           />
         )}
+
+        {currentView === 'metrics' && (
+          <MetricsView
+            projects={projects}
+            selectedQuarter={filters.quarter || currentQuarter}
+            onQuarterChange={(q) => handleFilterChange({ quarter: q })}
+            availableQuarters={availableQuarters}
+            onOpenTaskModal={handleOpenNewTask}
+            onViewGantt={() => setCurrentView('gantt')}
+          />
+        )}
       </main>
 
       {/* 4. Modals */}
@@ -634,6 +761,15 @@ export default function App() {
         projects={projects}
         onApplyJson={handleApplyJson}
         onResetDefault={handleResetDefault}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        teamMembers={teamMembers}
+        onSaveTeamMembers={setTeamMembers}
+        jiraConfig={jiraConfig}
+        onSaveJiraConfig={setJiraConfig}
       />
     </div>
   );

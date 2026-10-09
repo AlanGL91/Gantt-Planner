@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, FolderPlus } from 'lucide-react';
-import { Project } from '../types/gantt';
+import { X, FolderPlus, Calendar, Target } from 'lucide-react';
+import { Project, TaskStage, TaskSize, InitiativeType } from '../types/gantt';
+import { STAGE_CONFIG } from '../data/initialData';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -21,6 +22,21 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   const [code, setCode] = useState(initialProject?.code || '');
   const [projectLead, setProjectLead] = useState(
     initialProject?.projectLead || ''
+  );
+  const [size, setSize] = useState<TaskSize>(
+    initialProject?.size || 'M'
+  );
+  const [initiativeType, setInitiativeType] = useState<InitiativeType>(
+    initialProject?.initiativeType || 'negocio'
+  );
+  const [quarter, setQuarter] = useState(
+    initialProject?.quarter || 'Q4 2026'
+  );
+  const [targetStageForQuarter, setTargetStageForQuarter] = useState<TaskStage>(
+    initialProject?.targetStageForQuarter || 'produccion'
+  );
+  const [quarterObjective, setQuarterObjective] = useState(
+    initialProject?.quarterObjective || ''
   );
   const [description, setDescription] = useState(
     initialProject?.description || ''
@@ -44,6 +60,11 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       name: name.trim(),
       code: code.trim() || name.substring(0, 4).toUpperCase(),
       projectLead: projectLead.trim(),
+      size,
+      initiativeType,
+      quarter: quarter.trim() || 'Sin Asignar',
+      targetStageForQuarter,
+      quarterObjective: quarterObjective.trim(),
       description: description.trim(),
       color,
       tasks: initialProject?.tasks || [],
@@ -121,6 +142,38 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Talle de Camiseta (Estimación) *
+              </label>
+              <select
+                value={size}
+                onChange={(e) => setSize(e.target.value as TaskSize)}
+                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:bg-white focus:ring-1 focus:ring-blue-500 font-bold text-slate-800"
+              >
+                <option value="S">S (0 a 1 mes)</option>
+                <option value="M">M (&gt; 1 mes hasta 2 meses)</option>
+                <option value="L">L (&gt; 2 meses hasta 3 meses)</option>
+                <option value="XL">XL (&gt; 3 meses hasta 4.5 meses)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Tipo de Iniciativa *
+              </label>
+              <select
+                value={initiativeType}
+                onChange={(e) => setInitiativeType(e.target.value as InitiativeType)}
+                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:bg-white focus:ring-1 focus:ring-blue-500 font-medium text-slate-800"
+              >
+                <option value="negocio">Iniciativa de Negocio (Cliente/Comercial)</option>
+                <option value="interna">Iniciativa Interna (Infraestructura/Tech)</option>
+              </select>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Responsable General del Proyecto (Project Owner / Lead) *
@@ -135,9 +188,63 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200/80">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                <span>Asignación a Trimestre / Q</span>
+              </label>
+              <select
+                value={quarter}
+                onChange={(e) => setQuarter(e.target.value)}
+                className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="Q4 2026">Q4 2026 (En curso)</option>
+                <option value="Q1 2027">Q1 2027</option>
+                <option value="Q2 2027">Q2 2027</option>
+                <option value="Q3 2026">Q3 2026</option>
+                <option value="Sin Asignar">Sin Asignar a un Q</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                <Target className="w-3.5 h-3.5 text-blue-600" />
+                <span>Etapa Comprometida para el Q</span>
+              </label>
+              <select
+                value={targetStageForQuarter}
+                onChange={(e) => setTargetStageForQuarter(e.target.value as TaskStage)}
+                className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="produccion">Producción (100% - Puesta en marcha)</option>
+                <option value="qa">QA & Testing (75% - Certificación)</option>
+                <option value="backlog">Desarrollo / Backlog (50%)</option>
+                <option value="relevamiento">Relevamiento (25% - Diseño)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+              <Target className="w-3.5 h-3.5 text-blue-600" />
+              <span>Objetivo del Proyecto para este Q *</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Ej: Pasar la app a producción en tiendas / Completar certificación QA..."
+              value={quarterObjective}
+              onChange={(e) => setQuarterObjective(e.target.value)}
+              className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Este objetivo se medirá en la Hoja de Métricas respecto a la etapa comprometida vs alcanzada.
+            </p>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Descripción y Alcance
+              Descripción y Alcance General
             </label>
             <textarea
               rows={3}

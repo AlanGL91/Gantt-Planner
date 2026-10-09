@@ -46,6 +46,8 @@ export interface Task {
   subtasks: Subtask[];
 }
 
+export type InitiativeType = 'negocio' | 'interna';
+
 export interface Project {
   id: string;
   name: string;
@@ -54,6 +56,11 @@ export interface Project {
   leadAvatar?: string;
   description: string;
   color: string;
+  size?: TaskSize; // Talle de camiseta del proyecto: S, M, L, XL
+  initiativeType?: InitiativeType; // 'negocio' o 'interna'
+  quarter?: string; // e.g. "Q4 2026", "Q1 2027", or undefined/"Sin Asignar"
+  quarterObjective?: string; // Objetivo del proyecto para el Q en curso
+  targetStageForQuarter?: TaskStage; // Etapa comprometida para el final del Q (relevamiento, backlog, qa, produccion)
   tasks: Task[];
 }
 
@@ -63,6 +70,26 @@ export interface GanttFilterState {
   status: string;
   stage: string;
   projectId: string;
+  quarter: string; // Filter by Q (defaults to current Q)
+  initiativeType?: string; // Filter by Negocio / Interna
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  email?: string;
+  active: boolean;
+}
+
+export interface JiraConfig {
+  domain: string;
+  email: string;
+  apiToken: string;
+  projectKeys: string;
+  connected: boolean;
+  lastSync?: string;
 }
 
 export interface TimelineColumn {

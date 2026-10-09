@@ -1,4 +1,34 @@
-import { TimeAperture, TimelineColumn } from '../types/gantt';
+import { TimeAperture, TimelineColumn, TaskStage } from '../types/gantt';
+
+// Calculate current Quarter string based on local date (e.g. Q4 2026)
+export function getCurrentQuarterString(date = new Date()): string {
+  const q = Math.floor(date.getMonth() / 3) + 1;
+  return `Q${q} ${date.getFullYear()}`;
+}
+
+export const STAGE_WEIGHTS: Record<TaskStage, { percent: number; label: string }> = {
+  relevamiento: { percent: 25, label: 'Relevamiento (25%)' },
+  backlog: { percent: 50, label: 'Desarrollo / Backlog (50%)' },
+  qa: { percent: 75, label: 'QA & Testing (75%)' },
+  produccion: { percent: 100, label: 'Producción (100%)' },
+};
+
+export const STAGE_PROGRESSION: TaskStage[] = ['relevamiento', 'backlog', 'qa', 'produccion'];
+
+// T-shirt size expected durations for Projects:
+// S: 0 a 1 mes | M: > 1 a 2 meses | L: > 2 a 3 meses | XL: > 3 a 4.5 meses
+export const PROJECT_SIZE_RANGES: Record<string, { minMonths: number; maxMonths: number; label: string; desc: string }> = {
+  S: { minMonths: 0, maxMonths: 1.0, label: 'S', desc: '0 a 1 mes' },
+  M: { minMonths: 1.0, maxMonths: 2.0, label: 'M', desc: '> 1 mes a 2 meses' },
+  L: { minMonths: 2.0, maxMonths: 3.0, label: 'L', desc: '> 2 meses a 3 meses' },
+  XL: { minMonths: 3.0, maxMonths: 4.5, label: 'XL', desc: '> 3 meses a 4.5 meses' },
+};
+
+export function getProjectDurationInMonths(startDateStr?: string | null, endDateStr?: string | null): number {
+  if (!startDateStr || !endDateStr) return 0;
+  const days = getDaysDifference(startDateStr, endDateStr);
+  return Math.round((days / 30.4) * 10) / 10;
+}
 
 export const MONTH_NAMES_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',

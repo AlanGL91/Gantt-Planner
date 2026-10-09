@@ -129,6 +129,30 @@ export const TableView: React.FC<TableViewProps> = ({
                     <span className="text-[11px] font-mono text-slate-500">
                       ({project.code})
                     </span>
+                    <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full">
+                      {project.quarter || 'Sin Q'}
+                    </span>
+                    {project.size && (
+                      <span className="text-[10px] font-mono font-bold text-slate-700 bg-slate-200/80 px-1.5 py-0.5 rounded">
+                        Camiseta {project.size}
+                      </span>
+                    )}
+                    {project.initiativeType && (
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          project.initiativeType === 'negocio'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                            : 'bg-purple-50 text-purple-700 border border-purple-100'
+                        }`}
+                      >
+                        {project.initiativeType === 'negocio' ? 'Negocio' : 'Interna'}
+                      </span>
+                    )}
+                    {project.quarterObjective && (
+                      <span className="text-[11px] text-slate-500 italic max-w-sm truncate hidden md:inline" title={project.quarterObjective}>
+                        · Meta {project.quarter}: {project.quarterObjective}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-4 text-xs text-slate-600">

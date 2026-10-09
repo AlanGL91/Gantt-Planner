@@ -26,6 +26,8 @@ interface GanttControlsProps {
   onResetFilters: () => void;
   projects: Project[];
   allAssignees: string[];
+  availableQuarters: string[];
+  currentQuarter: string;
   onExpandAll: () => void;
   onCollapseAll: () => void;
   onNewProject: () => void;
@@ -43,6 +45,8 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
   onResetFilters,
   projects,
   allAssignees,
+  availableQuarters,
+  currentQuarter,
   onExpandAll,
   onCollapseAll,
   onNewProject,
@@ -53,7 +57,9 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
       filters.assignee ||
       filters.status ||
       filters.stage ||
-      filters.projectId
+      filters.projectId ||
+      (filters.initiativeType && filters.initiativeType !== '') ||
+      (filters.quarter && filters.quarter !== currentQuarter)
   );
 
   return (
@@ -62,6 +68,28 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Left: Project Selector & Action additions */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Quarter Filter (Defaults to current Q) */}
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-200/90 rounded-lg px-2 py-1">
+            <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span className="text-[11px] font-semibold text-slate-500">Q:</span>
+            <select
+              value={filters.quarter}
+              onChange={(e) => onFilterChange({ quarter: e.target.value })}
+              className="text-xs font-bold text-slate-900 bg-transparent focus:outline-none cursor-pointer pr-1"
+            >
+              {availableQuarters.map((q) => (
+                <option key={q} value={q}>
+                  {q} {q === currentQuarter ? '(En curso)' : ''}
+                </option>
+              ))}
+              <option value="__UNASSIGNED__">Sin Asignar</option>
+              <option value="__ALL__">Todos los Q</option>
+            </select>
+          </div>
+
+          <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
+
+          {/* Project Selector */}
           <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mr-1">
             <Layers className="w-3.5 h-3.5 text-slate-400" />
             <span>Proyecto:</span>
@@ -69,9 +97,9 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
           <select
             value={filters.projectId}
             onChange={(e) => onFilterChange({ projectId: e.target.value })}
-            className="text-xs font-medium text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[220px]"
+            className="text-xs font-medium text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[200px]"
           >
-            <option value="">Todos los proyectos ({projects.length})</option>
+            <option value="">Todos ({projects.length})</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -215,6 +243,18 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
               className="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
+
+          {/* Filter Tipo de Iniciativa (Negocio vs Interna) */}
+          <select
+            value={filters.initiativeType || ''}
+            onChange={(e) => onFilterChange({ initiativeType: e.target.value })}
+            className="bg-slate-50 border border-slate-200 text-slate-700 py-1 px-2 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+            title="Filtrar por tipo de iniciativa"
+          >
+            <option value="">Todas las Iniciativas</option>
+            <option value="negocio">💼 De Negocio</option>
+            <option value="interna">⚙️ Internas</option>
+          </select>
 
           {/* Filter Responsable */}
           <select

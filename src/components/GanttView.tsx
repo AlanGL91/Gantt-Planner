@@ -139,13 +139,32 @@ export const GanttView: React.FC<GanttViewProps> = ({
                         style={{ color: project.color }}
                       />
 
-                      <div className="truncate">
-                        <span className="font-bold text-xs text-slate-900 mr-2">
+                      <div className="truncate flex items-center gap-1.5">
+                        <span className="font-bold text-xs text-slate-900 truncate">
                           {project.name}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono">
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
                           [{project.code}]
                         </span>
+                        <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.2 rounded-full shrink-0">
+                          {project.quarter || 'Sin Q'}
+                        </span>
+                        {project.size && (
+                          <span className="text-[10px] font-bold font-mono text-slate-700 bg-slate-200/80 px-1.5 py-0.2 rounded shrink-0">
+                            {project.size}
+                          </span>
+                        )}
+                        {project.initiativeType && (
+                          <span
+                            className={`text-[9px] font-semibold px-1.5 py-0.2 rounded-full shrink-0 ${
+                              project.initiativeType === 'negocio'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-100'
+                                : 'bg-purple-50 text-purple-600 border border-purple-100'
+                            }`}
+                          >
+                            {project.initiativeType === 'negocio' ? 'Negocio' : 'Interna'}
+                          </span>
+                        )}
                       </div>
                     </div>
 
