@@ -1,0 +1,6 @@
+{
+  "name": "Planificador Gantt Pro",
+  "description": "Planificador Gantt interactivo con vistas por semanas, sprints de 2 semanas, meses y quarters, desglose por etapas y editor JSON bidireccional.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
