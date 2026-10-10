@@ -83,7 +83,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
   const STAGES_ORDER: TaskStage[] = ['backlog', 'relevamiento', 'qa', 'produccion'];
 
   return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden select-none">
+    <div className="flex-1 flex flex-col bg-white dark:bg-slate-950 overflow-hidden select-none transition-colors">
       <div className="flex-1 flex overflow-hidden">
         {/* ========================================================= */}
         {/* LEFT PANE: Hierarchical Table Tree (Accordion) */}
@@ -91,22 +91,22 @@ export const GanttView: React.FC<GanttViewProps> = ({
         <div
           ref={leftTableRef}
           onScroll={handleLeftScroll}
-          className="w-[480px] shrink-0 border-r border-slate-200 bg-white flex flex-col overflow-y-auto overflow-x-hidden shadow-xs z-10"
+          className="w-[480px] shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col overflow-y-auto overflow-x-hidden shadow-xs z-10"
         >
           {/* Header Row */}
-          <div className="h-[58px] bg-slate-50 border-b border-slate-200 px-4 flex items-center justify-between text-xs font-semibold text-slate-600 sticky top-0 z-20">
+          <div className="h-[58px] bg-slate-50 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300 sticky top-0 z-20">
             <div className="flex items-center gap-2">
-              <Layers className="w-3.5 h-3.5 text-slate-400" />
+              <Layers className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
               <span>Proyecto / Etapa / Tareas</span>
             </div>
-            <div className="flex items-center gap-4 text-slate-400 font-medium">
+            <div className="flex items-center gap-4 text-slate-400 dark:text-slate-500 font-medium">
               <span className="w-20 text-right">Fechas</span>
               <span className="w-20 text-left">Responsable</span>
             </div>
           </div>
 
           {/* Rows Tree */}
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {projects.map((project) => {
               const isProjectExpanded = expandedProjects.has(project.id);
               const totalTasksCount = project.tasks.length;
@@ -115,7 +115,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                 <div key={project.id} className="group/proj">
                   {/* PROJECT ROW */}
                   <div
-                    className="h-11 px-3 bg-slate-50/80 hover:bg-slate-100/80 flex items-center justify-between cursor-pointer border-l-4 transition-colors"
+                    className="h-11 px-3 bg-slate-50/80 dark:bg-slate-800 hover:bg-slate-100/80 dark:hover:bg-slate-700 flex items-center justify-between cursor-pointer border-l-4 transition-colors"
                     style={{ borderLeftColor: project.color }}
                     onClick={() => onToggleProject(project.id)}
                   >
@@ -125,7 +125,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                           e.stopPropagation();
                           onToggleProject(project.id);
                         }}
-                        className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+                        className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
                       >
                         {isProjectExpanded ? (
                           <ChevronDown className="w-4 h-4" />
@@ -140,17 +140,17 @@ export const GanttView: React.FC<GanttViewProps> = ({
                       />
 
                       <div className="truncate flex items-center gap-1.5">
-                        <span className="font-bold text-xs text-slate-900 truncate">
+                        <span className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
                           {project.name}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono shrink-0">
                           [{project.code}]
                         </span>
-                        <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.2 rounded-full shrink-0">
+                        <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 px-1.5 py-0.2 rounded-full shrink-0">
                           {project.quarter || 'Sin Q'}
                         </span>
                         {project.size && (
-                          <span className="text-[10px] font-bold font-mono text-slate-700 bg-slate-200/80 px-1.5 py-0.2 rounded shrink-0">
+                          <span className="text-[10px] font-bold font-mono text-slate-700 dark:text-slate-300 bg-slate-200/80 dark:bg-slate-800 px-1.5 py-0.2 rounded shrink-0">
                             {project.size}
                           </span>
                         )}
@@ -158,23 +158,26 @@ export const GanttView: React.FC<GanttViewProps> = ({
                           <span
                             className={`text-[9px] font-semibold px-1.5 py-0.2 rounded-full shrink-0 ${
                               project.initiativeType === 'negocio'
-                                ? 'bg-blue-50 text-blue-600 border border-blue-100'
-                                : 'bg-purple-50 text-purple-600 border border-purple-100'
+                                ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900'
+                                : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-100 dark:border-purple-900'
                             }`}
                           >
                             {project.initiativeType === 'negocio' ? 'Negocio' : 'Interna'}
                           </span>
                         )}
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono shrink-0">
+                          ({totalTasksCount})
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0 text-xs">
                       {/* Project Lead */}
                       <div
-                        className="flex items-center gap-1.5 text-slate-600 truncate max-w-[140px]"
+                        className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 truncate max-w-[140px]"
                         title={`Responsable del Proyecto: ${project.projectLead}`}
                       >
-                        <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-semibold text-[10px] flex items-center justify-center shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-semibold text-[10px] flex items-center justify-center shrink-0">
                           {project.leadAvatar || 'PL'}
                         </div>
                         <span className="truncate text-[11px] font-medium">
@@ -187,7 +190,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                           e.stopPropagation();
                           onEditProject(project);
                         }}
-                        className="opacity-0 group-hover/proj:opacity-100 p-1 text-slate-400 hover:text-slate-800 transition-opacity"
+                        className="opacity-0 group-hover/proj:opacity-100 p-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-opacity"
                         title="Configurar Proyecto"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -197,7 +200,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
 
                   {/* STAGES ACCORDION */}
                   {isProjectExpanded && (
-                    <div className="bg-white">
+                    <div className="bg-white dark:bg-slate-900">
                       {STAGES_ORDER.map((stageKey) => {
                         const stageConfig = STAGE_CONFIG[stageKey];
                         const stageKeyId = `${project.id}_${stageKey}`;
@@ -210,7 +213,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                           <div key={stageKeyId}>
                             {/* STAGE HEADER ROW */}
                             <div
-                              className="h-10 px-6 bg-slate-50/40 hover:bg-slate-100/50 flex items-center justify-between border-t border-slate-100 cursor-pointer transition-colors"
+                              className="h-10 px-6 bg-slate-50/40 dark:bg-slate-800/60 hover:bg-slate-100/50 dark:hover:bg-slate-800 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 cursor-pointer transition-colors"
                               onClick={() => onToggleStage(project.id, stageKey)}
                             >
                               <div className="flex items-center gap-2 min-w-0">
@@ -219,7 +222,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                                     e.stopPropagation();
                                     onToggleStage(project.id, stageKey);
                                   }}
-                                  className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+                                  className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
                                 >
                                   {isStageExpanded ? (
                                     <ChevronDown className="w-3.5 h-3.5" />
@@ -233,11 +236,11 @@ export const GanttView: React.FC<GanttViewProps> = ({
                                   style={{ backgroundColor: stageConfig.color }}
                                 />
 
-                                <span className="font-semibold text-xs text-slate-800">
+                                <span className="font-semibold text-xs text-slate-800 dark:text-slate-200">
                                   {stageConfig.name}
                                 </span>
 
-                                <span className="text-[11px] text-slate-400 font-mono tabular-nums">
+                                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono tabular-nums">
                                   ({stageTasks.length})
                                 </span>
                               </div>
@@ -248,7 +251,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                                     e.stopPropagation();
                                     onAddTaskToStage(project.id, stageKey);
                                   }}
-                                  className="flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-700 px-2 py-0.5 rounded hover:bg-blue-50 transition-colors"
+                                  className="flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-2 py-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
                                   title={`Agregar tarea a ${stageConfig.name}`}
                                 >
                                   <Plus className="w-3 h-3" />
@@ -259,13 +262,13 @@ export const GanttView: React.FC<GanttViewProps> = ({
 
                             {/* TASKS IN THIS STAGE */}
                             {isStageExpanded && (
-                              <div className="divide-y divide-slate-100">
+                              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
                                 {stageTasks.length === 0 ? (
-                                  <div className="h-9 px-10 flex items-center justify-between text-xs text-slate-400 italic bg-white">
+                                  <div className="h-9 px-10 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 italic bg-white dark:bg-slate-900">
                                     <span>No hay tareas en esta etapa</span>
                                     <button
                                       onClick={() => onAddTaskToStage(project.id, stageKey)}
-                                      className="text-blue-600 hover:underline not-italic font-normal"
+                                      className="text-blue-600 dark:text-blue-400 hover:underline not-italic font-normal"
                                     >
                                       + Agregar
                                     </button>
@@ -280,7 +283,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                                       <div key={task.id}>
                                         {/* TASK ROW */}
                                         <div
-                                          className="h-10 pl-9 pr-3 hover:bg-blue-50/30 flex items-center justify-between cursor-pointer transition-colors group/task"
+                                          className="h-10 pl-9 pr-3 hover:bg-blue-50/30 dark:hover:bg-slate-800/70 flex items-center justify-between cursor-pointer transition-colors group/task"
                                           onClick={() =>
                                             onEditTask(project.id, task, false)
                                           }
@@ -292,7 +295,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                                                   e.stopPropagation();
                                                   onToggleTask(task.id);
                                                 }}
-                                                className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+                                                className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors"
                                               >
                                                 {isTaskExpanded ? (
                                                   <ChevronDown className="w-3.5 h-3.5" />
@@ -304,59 +307,50 @@ export const GanttView: React.FC<GanttViewProps> = ({
                                               <span className="w-4" />
                                             )}
 
-                                            <span
-                                              className="w-1.5 h-1.5 rounded-full shrink-0"
-                                              style={{ backgroundColor: stageConfig.color }}
+                                            <div
+                                              className="w-2 h-2 rounded-xs shrink-0"
+                                              style={{ backgroundColor: task.color || project.color }}
                                             />
 
-                                            <span className="text-xs font-medium text-slate-800 truncate">
+                                            <span className="truncate text-xs text-slate-800 dark:text-slate-200 font-medium">
                                               {task.title}
                                             </span>
 
-                                            {task.type === 'Hito' && (
-                                              <Diamond className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+                                            {task.epic && (
+                                              <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[100px] shrink-0">
+                                                [{task.epic}]
+                                              </span>
                                             )}
                                           </div>
 
-                                          <div className="flex items-center gap-3 shrink-0 text-xs">
-                                            {/* Subtask addition button */}
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                onAddSubtask(project.id, task.id);
-                                              }}
-                                              className="opacity-0 group-hover/task:opacity-100 p-1 text-slate-400 hover:text-blue-600 transition-opacity"
-                                              title="Añadir subtarea"
-                                            >
-                                              <Plus className="w-3 h-3" />
-                                            </button>
-
-                                            {/* Date */}
-                                            <span className="text-[11px] text-slate-500 font-mono tabular-nums w-18 text-right">
+                                          {/* Right metadata for task */}
+                                          <div className="flex items-center gap-4 text-xs shrink-0 text-slate-500 dark:text-slate-400 font-mono">
+                                            <span className="text-[11px] tabular-nums w-20 text-right">
                                               {formatDateFriendly(task.startDate)}
                                             </span>
 
-                                            {/* Assignee */}
+                                            {/* Assignee Avatar */}
                                             <div
-                                              className="flex items-center gap-1.5 w-24 truncate"
+                                              className="flex items-center gap-1.5 w-20 truncate"
                                               title={`Responsable: ${task.assignee}`}
                                             >
-                                              <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-medium text-[9px] flex items-center justify-center shrink-0">
+                                              <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-750 text-slate-700 dark:text-slate-300 font-medium text-[8px] flex items-center justify-center shrink-0">
                                                 {task.assigneeAvatar || task.assignee.substring(0, 2).toUpperCase()}
                                               </div>
-                                              <span className="truncate text-[11px] text-slate-600">
+                                              <span className="truncate text-[11px] text-slate-700 dark:text-slate-300">
                                                 {task.assignee.split(' ')[0]}
                                               </span>
                                             </div>
                                           </div>
                                         </div>
 
-                                        {/* SUBTASKS ROWS */}
+                                        {/* SUBTASKS ACCORDION */}
                                         {isTaskExpanded &&
-                                          task.subtasks?.map((subtask) => (
+                                          task.subtasks &&
+                                          task.subtasks.map((subtask) => (
                                             <div
                                               key={subtask.id}
-                                              className="h-9 pl-14 pr-3 hover:bg-slate-50 flex items-center justify-between cursor-pointer border-t border-slate-50 transition-colors"
+                                              className="h-8 pl-16 pr-3 bg-slate-50/30 dark:bg-slate-900/40 hover:bg-slate-100/40 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer border-t border-slate-50 dark:border-slate-850 transition-colors"
                                               onClick={() =>
                                                 onEditTask(
                                                   project.id,
@@ -367,26 +361,26 @@ export const GanttView: React.FC<GanttViewProps> = ({
                                               }
                                             >
                                               <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-                                                <span className="text-slate-300">↳</span>
-                                                <span className="text-xs text-slate-700 truncate">
+                                                <span className="text-slate-300 dark:text-slate-600 text-xs">↳</span>
+                                                <span className="truncate text-[11px] text-slate-600 dark:text-slate-300">
                                                   {subtask.title}
                                                 </span>
                                               </div>
 
-                                              <div className="flex items-center gap-3 shrink-0 text-xs">
-                                                <span className="text-[11px] text-slate-400 font-mono tabular-nums w-18 text-right">
+                                              <div className="flex items-center gap-4 text-[10px] shrink-0 text-slate-400 dark:text-slate-500 font-mono">
+                                                <span className="tabular-nums w-20 text-right">
                                                   {formatDateFriendly(subtask.startDate)}
                                                 </span>
 
                                                 {/* Subtask distinct assignee */}
                                                 <div
-                                                  className="flex items-center gap-1.5 w-24 truncate"
+                                                  className="flex items-center gap-1.5 w-20 truncate"
                                                   title={`Responsable Subtarea: ${subtask.assignee}`}
                                                 >
-                                                  <div className="w-4 h-4 rounded-full bg-slate-100 text-slate-600 font-medium text-[8px] flex items-center justify-center shrink-0">
+                                                  <div className="w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-[8px] flex items-center justify-center shrink-0">
                                                     {subtask.assigneeAvatar || subtask.assignee.substring(0, 2).toUpperCase()}
                                                   </div>
-                                                  <span className="truncate text-[10px] text-slate-500">
+                                                  <span className="truncate text-[10px] text-slate-500 dark:text-slate-400">
                                                     {subtask.assignee.split(' ')[0]}
                                                   </span>
                                                 </div>
@@ -416,18 +410,17 @@ export const GanttView: React.FC<GanttViewProps> = ({
         <div
           ref={rightCanvasRef}
           onScroll={handleRightScroll}
-          className="flex-1 overflow-auto bg-slate-50/50 relative"
+          className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 relative"
         >
           <div
             style={{ width: `${totalTimelineWidth}px` }}
             className="min-w-full relative"
           >
             {/* TIMELINE HEADER (Two-tier) */}
-            <div className="sticky top-0 z-20 bg-white border-b border-slate-200">
+            <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
               {/* Group Tier (Months or Years) */}
-              <div className="h-7 border-b border-slate-100 flex divide-x divide-slate-100 text-[11px] font-semibold text-slate-700">
+              <div className="h-7 border-b border-slate-100 dark:border-slate-800 flex divide-x divide-slate-100 dark:divide-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200">
                 {timelineColumns.map((col, idx) => {
-                  // Only render group header if label changes or at start
                   const prevCol = timelineColumns[idx - 1];
                   const showGroupLabel =
                     !prevCol || prevCol.groupLabel !== col.groupLabel;
@@ -436,10 +429,10 @@ export const GanttView: React.FC<GanttViewProps> = ({
                     <div
                       key={`grp-${col.id}`}
                       style={{ width: `${columnWidth}px` }}
-                      className="shrink-0 px-2 flex items-center text-slate-500 overflow-hidden"
+                      className="shrink-0 px-2 flex items-center text-slate-500 dark:text-slate-400 overflow-hidden"
                     >
                       {showGroupLabel && (
-                        <span className="font-semibold text-slate-800 truncate">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
                           {col.groupLabel}
                         </span>
                       )}
@@ -449,18 +442,20 @@ export const GanttView: React.FC<GanttViewProps> = ({
               </div>
 
               {/* Ticks Tier (Weeks, Sprints, Months, Quarters) */}
-              <div className="h-7 flex divide-x divide-slate-200/80 text-[11px] font-mono">
+              <div className="h-7 flex divide-x divide-slate-200/80 dark:divide-slate-800 text-[11px] font-mono">
                 {timelineColumns.map((col) => (
                   <div
                     key={col.id}
                     style={{ width: `${columnWidth}px` }}
                     className={`shrink-0 px-1.5 flex flex-col justify-center items-center overflow-hidden transition-colors ${
-                      col.isToday ? 'bg-blue-50/70 font-semibold text-blue-700' : 'text-slate-600'
+                      col.isToday
+                        ? 'bg-blue-50/70 dark:bg-blue-950/50 font-semibold text-blue-700 dark:text-blue-300'
+                        : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     <span className="truncate">{col.label}</span>
                     {col.subLabel && (
-                      <span className="text-[9px] text-slate-400 truncate">
+                      <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate">
                         {col.subLabel}
                       </span>
                     )}
@@ -470,13 +465,13 @@ export const GanttView: React.FC<GanttViewProps> = ({
             </div>
 
             {/* Vertical grid lines background */}
-            <div className="absolute inset-0 top-[58px] pointer-events-none flex divide-x divide-slate-200/60 z-0">
+            <div className="absolute inset-0 top-[58px] pointer-events-none flex divide-x divide-slate-200/60 dark:divide-slate-800/50 z-0">
               {timelineColumns.map((col) => (
                 <div
                   key={`grid-${col.id}`}
                   style={{ width: `${columnWidth}px` }}
                   className={`shrink-0 h-full ${
-                    col.isToday ? 'bg-blue-50/20' : ''
+                    col.isToday ? 'bg-blue-50/20 dark:bg-blue-950/20' : ''
                   }`}
                 />
               ))}
@@ -485,6 +480,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
             {/* "HOY" (Today) Vertical Line */}
             {todayX !== null && (
               <div
+                id="today-marker-line"
                 style={{ left: `${todayX}px` }}
                 className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-10 pointer-events-none shadow-xs"
               >
@@ -532,7 +528,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                           onClick={() => onToggleProject(project.id)}
                         >
                           <div
-                            className="absolute inset-0 rounded-md opacity-20"
+                            className="absolute inset-0 rounded-md opacity-25 dark:opacity-40"
                             style={{ backgroundColor: project.color }}
                           />
                           <div
@@ -544,8 +540,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                             style={{ backgroundColor: project.color }}
                           />
                           <span
-                            className="relative text-[11px] font-bold truncate z-1"
-                            style={{ color: project.color }}
+                            className="relative text-[11px] font-bold truncate z-1 text-slate-900 dark:text-white"
                           >
                             {project.name}
                           </span>
@@ -583,7 +578,7 @@ export const GanttView: React.FC<GanttViewProps> = ({
                         return (
                           <div key={`gantt-stage-${stageKeyId}`}>
                             {/* STAGE HEADER ROW (Height: 40px) */}
-                            <div className="h-10 flex items-center relative border-t border-slate-100">
+                            <div className="h-10 flex items-center relative border-t border-slate-100 dark:border-slate-800">
                               {stagePos.isVisible && (
                                 <div
                                   style={{
@@ -591,165 +586,120 @@ export const GanttView: React.FC<GanttViewProps> = ({
                                     width: `${stagePos.width}px`,
                                     backgroundColor: stageConfig.color,
                                   }}
-                                  className="absolute h-2.5 rounded-full opacity-60 shadow-xs cursor-pointer hover:opacity-100 transition-opacity"
+                                  className="absolute h-2.5 rounded-full opacity-60 dark:opacity-80 shadow-xs cursor-pointer hover:opacity-100 transition-opacity"
                                   onClick={() => onToggleStage(project.id, stageKey)}
                                   title={`${stageConfig.name}: ${formatDateRange(minStageDate, maxStageDate)}`}
                                 />
                               )}
                             </div>
 
-                            {/* TASKS IN THIS STAGE */}
-                            {isStageExpanded && (
-                              <div>
-                                {stageTasks.length === 0 ? (
-                                  <div className="h-9" />
-                                ) : (
-                                  stageTasks.map((task) => {
-                                    const isTaskExpanded = expandedTasks.has(task.id);
-                                    const taskPos = calculateBarPosition(
-                                      task.startDate,
-                                      task.endDate,
-                                      timelineColumns,
-                                      columnWidth
-                                    );
-                                    const daysCount = getDaysDifference(
-                                      task.startDate,
-                                      task.endDate
-                                    );
+                            {/* TASKS BARS */}
+                            {isStageExpanded &&
+                              stageTasks.map((task) => {
+                                const isTaskExpanded = expandedTasks.has(task.id);
+                                const taskPos = calculateBarPosition(
+                                  task.startDate,
+                                  task.endDate,
+                                  timelineColumns,
+                                  columnWidth
+                                );
 
-                                    return (
-                                      <div key={`gantt-task-${task.id}`}>
-                                        {/* TASK BAR ROW (Height: 40px) */}
-                                        <div className="h-10 flex items-center relative group/bar">
-                                          {taskPos.isVisible && (
-                                            <>
-                                              {task.type === 'Hito' ? (
-                                                /* Milestone Diamond */
-                                                <div
-                                                  style={{
-                                                    left: `${taskPos.left}px`,
-                                                  }}
-                                                  className="absolute flex items-center cursor-pointer group-hover/bar:scale-110 transition-transform"
-                                                  onClick={() =>
-                                                    onEditTask(project.id, task, false)
-                                                  }
-                                                  title={`Hito: ${task.title} (${task.startDate})`}
-                                                >
-                                                  <div className="w-5 h-5 bg-amber-500 rotate-45 rounded-xs shadow-md border-2 border-white flex items-center justify-center -ml-2.5" />
-                                                  <span className="ml-2 text-xs font-semibold text-slate-800 whitespace-nowrap bg-white/80 px-1 rounded">
-                                                    {task.title}
-                                                  </span>
-                                                </div>
-                                              ) : (
-                                                /* Standard Gantt Bar */
-                                                <div
-                                                  style={{
-                                                    left: `${taskPos.left}px`,
-                                                    width: `${taskPos.width}px`,
-                                                  }}
-                                                  className="absolute h-7 rounded-lg flex items-center px-2.5 cursor-pointer shadow-xs transition-all hover:shadow-md hover:brightness-105 overflow-hidden"
-                                                  onClick={() =>
-                                                    onEditTask(project.id, task, false)
-                                                  }
-                                                >
-                                                  {/* Base background */}
-                                                  <div
-                                                    className="absolute inset-0 rounded-lg opacity-85"
-                                                    style={{
-                                                      backgroundColor:
-                                                        task.color || stageConfig.color,
-                                                    }}
-                                                  />
+                                return (
+                                  <div key={`gantt-task-${task.id}`}>
+                                    {/* TASK ROW BAR (Height: 40px) */}
+                                    <div className="h-10 flex items-center relative border-b border-transparent">
+                                      {taskPos.isVisible && (
+                                        <div
+                                          style={{
+                                            left: `${taskPos.left}px`,
+                                            width: `${taskPos.width}px`,
+                                          }}
+                                          className="absolute h-6 rounded-md flex items-center px-2 cursor-pointer shadow-xs group/bar transition-all hover:ring-2 hover:ring-blue-400"
+                                          onClick={() =>
+                                            onEditTask(project.id, task, false)
+                                          }
+                                        >
+                                          {/* Main colored task background bar */}
+                                          <div
+                                            className="absolute inset-0 rounded-md opacity-90 shadow-xs"
+                                            style={{
+                                              backgroundColor: task.color || project.color,
+                                            }}
+                                          />
 
-                                                  {/* Progress fill */}
-                                                  {task.progress > 0 && (
-                                                    <div
-                                                      style={{
-                                                        width: `${task.progress}%`,
-                                                      }}
-                                                      className="absolute inset-y-0 left-0 bg-black/25 rounded-l-lg pointer-events-none"
-                                                    />
-                                                  )}
+                                          {/* Progress overlay */}
+                                          {task.progress > 0 && (
+                                            <div
+                                              style={{ width: `${task.progress}%` }}
+                                              className="absolute top-0 bottom-0 left-0 bg-black/15 dark:bg-white/20 rounded-l-md pointer-events-none"
+                                            />
+                                          )}
 
-                                                  {/* Label */}
-                                                  <div className="relative z-1 flex items-center justify-between w-full text-white text-[11px] font-medium drop-shadow-xs">
-                                                    <span className="truncate pr-1">
-                                                      {task.title}
-                                                    </span>
-                                                    <span className="shrink-0 font-mono text-[10px] opacity-90 tabular-nums">
-                                                      {daysCount}d
-                                                    </span>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </>
+                                          {/* Label inside bar */}
+                                          <span className="relative text-[11px] font-semibold text-white truncate z-1 drop-shadow-xs">
+                                            {task.title}
+                                          </span>
+
+                                          {/* Progress tag if wide enough */}
+                                          {taskPos.width > 80 && (
+                                            <span className="relative ml-auto text-[9px] font-mono font-medium text-white/90 z-1 tabular-nums">
+                                              {task.progress}%
+                                            </span>
                                           )}
                                         </div>
+                                      )}
+                                    </div>
 
-                                        {/* SUBTASK BARS (Height: 36px) */}
-                                        {isTaskExpanded &&
-                                          task.subtasks?.map((subtask) => {
-                                            const subPos = calculateBarPosition(
-                                              subtask.startDate,
-                                              subtask.endDate,
-                                              timelineColumns,
-                                              columnWidth
-                                            );
-                                            const subDays = getDaysDifference(
-                                              subtask.startDate,
-                                              subtask.endDate
-                                            );
+                                    {/* SUBTASK BARS (Height: 32px each) */}
+                                    {isTaskExpanded &&
+                                      task.subtasks &&
+                                      task.subtasks.map((subtask) => {
+                                        const subtaskPos = calculateBarPosition(
+                                          subtask.startDate,
+                                          subtask.endDate,
+                                          timelineColumns,
+                                          columnWidth
+                                        );
 
-                                            return (
+                                        return (
+                                          <div
+                                            key={`gantt-sub-${subtask.id}`}
+                                            className="h-8 flex items-center relative border-b border-transparent"
+                                          >
+                                            {subtaskPos.isVisible && (
                                               <div
-                                                key={`gantt-sub-${subtask.id}`}
-                                                className="h-9 flex items-center relative group/subbar"
+                                                style={{
+                                                  left: `${subtaskPos.left}px`,
+                                                  width: `${subtaskPos.width}px`,
+                                                }}
+                                                className="absolute h-4 rounded flex items-center px-1.5 cursor-pointer shadow-2xs hover:brightness-110 transition-all"
+                                                onClick={() =>
+                                                  onEditTask(
+                                                    project.id,
+                                                    subtask,
+                                                    true,
+                                                    task.id
+                                                  )
+                                                }
                                               >
-                                                {subPos.isVisible && (
-                                                  <div
-                                                    style={{
-                                                      left: `${subPos.left}px`,
-                                                      width: `${subPos.width}px`,
-                                                    }}
-                                                    className="absolute h-5 rounded-md flex items-center px-2 cursor-pointer shadow-2xs hover:shadow-xs transition-all overflow-hidden"
-                                                    onClick={() =>
-                                                      onEditTask(
-                                                        project.id,
-                                                        subtask,
-                                                        true,
-                                                        task.id
-                                                      )
-                                                    }
-                                                    title={`${subtask.title} (${subtask.assignee}) · ${subtask.progress}%`}
-                                                  >
-                                                    <div
-                                                      className="absolute inset-0 rounded-md opacity-75"
-                                                      style={{
-                                                        backgroundColor: stageConfig.color,
-                                                      }}
-                                                    />
-                                                    {subtask.progress > 0 && (
-                                                      <div
-                                                        style={{
-                                                          width: `${subtask.progress}%`,
-                                                        }}
-                                                        className="absolute inset-y-0 left-0 bg-black/30 rounded-l-md pointer-events-none"
-                                                      />
-                                                    )}
-                                                    <span className="relative z-1 text-white text-[10px] font-medium truncate">
-                                                      {subtask.title}
-                                                    </span>
-                                                  </div>
-                                                )}
+                                                <div
+                                                  className="absolute inset-0 rounded opacity-75 dark:opacity-85"
+                                                  style={{
+                                                    backgroundColor:
+                                                      task.color || project.color,
+                                                  }}
+                                                />
+                                                <span className="relative text-[10px] text-white truncate z-1">
+                                                  {subtask.title}
+                                                </span>
                                               </div>
-                                            );
-                                          })}
-                                      </div>
-                                    );
-                                  })
-                                )}
-                              </div>
-                            )}
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                );
+                              })}
                           </div>
                         );
                       })}

@@ -38,9 +38,39 @@ import { SettingsModal } from './components/SettingsModal';
 const STORAGE_KEY = 'gantt_planner_projects_v5';
 const TEAM_STORAGE_KEY = 'gantt_team_members_v2';
 const JIRA_STORAGE_KEY = 'gantt_jira_config_v2';
+const THEME_STORAGE_KEY = 'gantt_dark_mode_v1';
 
 export default function App() {
   const currentQuarter = useMemo(() => getCurrentQuarterString(), []);
+
+  // Dark / Light Theme Mode state (Defaults to Día / Light Mode)
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved !== null) return saved === 'true';
+      // Default to Day mode
+      return false;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, String(isDarkMode));
+    } catch (e) {
+      console.error('Error saving theme preference', e);
+    }
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
 
   // Load persistent projects from localStorage or default
   const [projects, setProjects] = useState<Project[]>(() => {
@@ -654,7 +684,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans antialiased select-none">
+    <div className={`flex flex-col h-screen w-screen overflow-hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased select-none ${isDarkMode ? 'dark' : ''}`}>
       {/* 1. Header Navigation Bar */}
       <TopBar
         currentView={currentView}
@@ -663,6 +693,9 @@ export default function App() {
         onOpenJsonEditor={() => setIsJsonModalOpen(true)}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
         isJiraConnected={jiraConfig.connected}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+        onSetDarkMode={setIsDarkMode}
       />
 
       {/* 2. Interactive Planning Controls Toolbar (for Gantt & Table) */}

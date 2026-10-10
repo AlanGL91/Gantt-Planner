@@ -59,64 +59,79 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const [stage, setStage] = useState<TaskStage>(
     initialData?.task?.stage || initialData?.defaultStage || 'backlog'
   );
-  const [initiative, setInitiative] = useState<string>(
-    ('initiative' in (initialData?.task || {})
-      ? (initialData?.task as Task).initiative
-      : '') || ''
-  );
-  const [epic, setEpic] = useState<string>(
-    ('epic' in (initialData?.task || {})
-      ? (initialData?.task as Task).epic
-      : '') || ''
-  );
-  const [startDate, setStartDate] = useState<string>(
-    initialData?.task?.startDate || '2026-10-12'
-  );
-  const [endDate, setEndDate] = useState<string>(
-    initialData?.task?.endDate || '2026-10-26'
-  );
-  const [assignee, setAssignee] = useState<string>(
-    initialData?.task?.assignee || 'Carlos Benítez'
-  );
-  const [customAssignee, setCustomAssignee] = useState<string>('');
   const [status, setStatus] = useState<TaskStatus>(
     initialData?.task?.status || 'pendiente'
+  );
+  const [size, setSize] = useState<TaskSize>(
+    initialData?.task?.size || 'M'
+  );
+  const [startDate, setStartDate] = useState<string>(
+    initialData?.task?.startDate || new Date().toISOString().split('T')[0]
+  );
+  const [endDate, setEndDate] = useState<string>(
+    initialData?.task?.endDate ||
+      new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]
   );
   const [progress, setProgress] = useState<number>(
     initialData?.task?.progress ?? 0
   );
-  const [size, setSize] = useState<TaskSize>(initialData?.task?.size || 'M');
-  const [commitment, setCommitment] = useState<string>(
-    initialData?.task?.commitment || 'Sprint 3'
+  const [assignee, setAssignee] = useState<string>(
+    initialData?.task?.assignee || allAssignees[0] || 'Equipo Core'
   );
-  const [notes, setNotes] = useState<string>(initialData?.task?.notes || '');
+  const [initiative, setInitiative] = useState<string>(
+    (initialData?.task as Task)?.initiative || 'Transformación General'
+  );
+  const [epic, setEpic] = useState<string>(
+    (initialData?.task as Task)?.epic || 'Desarrollo de Solución'
+  );
+  const [commitment, setCommitment] = useState<string>(
+    initialData?.task?.commitment || 'Q4 2026'
+  );
+  const [notes, setNotes] = useState<string>(
+    initialData?.task?.notes || ''
+  );
   const [error, setError] = useState<string>('');
 
-  const selectedProject = projects.find((p) => p.id === projectId);
+  useEffect(() => {
+    if (initialData?.projectId) setProjectId(initialData.projectId);
+    if (initialData?.parentTaskId) setParentTaskId(initialData.parentTaskId);
+    if (initialData?.defaultStage) setStage(initialData.defaultStage);
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      setError('Por favor ingresa un título para la tarea');
+      setError('Por favor indica un título para la tarea');
       return;
     }
     if (new Date(startDate) > new Date(endDate)) {
-      setError('La fecha de fin no puede ser anterior a la fecha de inicio');
+      setError('La fecha de inicio no puede ser posterior a la fecha de finalización');
       return;
     }
 
-    const finalAssignee = customAssignee.trim() || assignee;
+    const initials = assignee
+      .trim()
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+
+    const selectedProj = projects.find((p) => p.id === projectId);
+    const color = selectedProj?.color || '#2563EB';
 
     const taskPayload: Partial<Task> = {
       ...(initialData?.task?.id ? { id: initialData.task.id } : {}),
       title: title.trim(),
       type,
       stage,
+      status,
       startDate,
       endDate,
-      assignee: finalAssignee,
-      status,
       progress: Number(progress),
+      assignee: assignee.trim(),
+      assigneeAvatar: initials || 'EQ',
+      color,
       size,
       commitment: commitment.trim(),
       notes: notes.trim(),
@@ -141,246 +156,186 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/60 backdrop-blur-xs">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 transition-colors">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-850">
           <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <span>{isEditing ? 'Editar' : 'Nueva'}</span>
               <span>{isSubtask ? 'Subtarea' : 'Tarea del Planificador'}</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Configura los detalles cronológicos, responsables y estado para el diagrama Gantt
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-700 rounded-lg transition-colors"
+            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs">
           {error && (
-            <div className="p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg">
+            <div className="p-3 text-rose-700 bg-rose-50 border border-rose-200 rounded-lg">
               {error}
             </div>
           )}
 
-          {/* Project & Parent Task */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Project and Parent Selection */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Proyecto Asignado *
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Proyecto Contenedor *
               </label>
               <select
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
                 disabled={isEditing}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
               >
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} ({p.projectLead})
+                    {p.name} [{p.code}]
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Etapa / Categoría *
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Tipo de Ítem
               </label>
               <select
-                value={stage}
-                onChange={(e) => setStage(e.target.value as TaskStage)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                value={type}
+                onChange={(e) => setType(e.target.value as TaskType)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                {Object.entries(STAGE_CONFIG).map(([key, cfg]) => (
-                  <option key={key} value={key}>
-                    {cfg.name} - {cfg.description}
-                  </option>
-                ))}
+                <option value="Historia">Historia</option>
+                <option value="Tarea">Tarea</option>
+                <option value="Mejora">Mejora</option>
+                <option value="Bug">Bug</option>
               </select>
             </div>
           </div>
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Nombre de la {isSubtask ? 'Subtarea' : 'Tarea'} *
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Título / Descripción Corta *
             </label>
             <input
               type="text"
-              placeholder="Ej: Implementación de API Gateway, Conector Buró..."
+              placeholder="Ej: Análisis de requerimientos funcionales, Integración API..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               required
             />
           </div>
 
-          {/* Type & Talle & Commitment */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Stage & Status */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Tipo
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Etapa Operativa *
               </label>
               <select
-                value={type}
-                onChange={(e) => setType(e.target.value as TaskType)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                value={stage}
+                onChange={(e) => setStage(e.target.value as TaskStage)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="Epica">Épica</option>
-                <option value="Historia">Historia</option>
-                <option value="Tarea">Tarea</option>
-                <option value="Bug">Bug</option>
-                <option value="Hito">Hito / Milestone</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Talle (T-Shirt Size)
-              </label>
-              <select
-                value={size}
-                onChange={(e) => setSize(e.target.value as TaskSize)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:bg-white focus:ring-1 focus:ring-blue-500 font-semibold text-slate-800"
-              >
-                {Object.entries(SIZE_CONFIG).map(([sKey, sCfg]) => (
-                  <option key={sKey} value={sKey}>
-                    {sCfg.label} ({sCfg.desc})
+                {Object.entries(STAGE_CONFIG).map(([key, cfg]) => (
+                  <option key={key} value={key}>
+                    {cfg.name}
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Compromiso / Sprint
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Estado Actual *
               </label>
-              <input
-                type="text"
-                placeholder="Ej: Sprint 1, Sprint 2"
-                value={commitment}
-                onChange={(e) => setCommitment(e.target.value)}
-                className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as TaskStatus)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                  <option key={key} value={key}>
+                    {cfg.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Epic and Initiative (if not subtask) */}
-          {!isSubtask && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Épica
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Infraestructura Cloud, Módulo de Pagos"
-                  value={epic}
-                  onChange={(e) => setEpic(e.target.value)}
-                  className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Iniciativa
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Modernización Core, Experiencia Móvil"
-                  value={initiative}
-                  onChange={(e) => setInitiative(e.target.value)}
-                  className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Dates: Start & End */}
-          <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200/80">
+          {/* Dates & Duration */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                <span>Fecha de Inicio *</span>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Fecha de Inicio *
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
               />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                <span>Fecha Fin *</span>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Fecha de Finalización *
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
               />
             </div>
           </div>
 
-          {/* Assignee & Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Assignee & Size */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <User className="w-3.5 h-3.5 text-slate-500" />
-                <span>Responsable / Analista Asignado *</span>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Responsable Asignado *
               </label>
-              <select
+              <input
+                type="text"
+                list="assignees-list"
                 value={assignee}
-                onChange={(e) => {
-                  setAssignee(e.target.value);
-                  setCustomAssignee('');
-                }}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:bg-white focus:ring-1 focus:ring-blue-500 mb-1.5"
-              >
-                {allAssignees.map((person) => (
-                  <option key={person} value={person}>
-                    {person}
-                  </option>
+                onChange={(e) => setAssignee(e.target.value)}
+                placeholder="Nombre del analista o dev"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                required
+              />
+              <datalist id="assignees-list">
+                {allAssignees.map((a) => (
+                  <option key={a} value={a} />
                 ))}
-                <option value="__custom__">+ Otro responsable...</option>
-              </select>
-
-              {assignee === '__custom__' && (
-                <input
-                  type="text"
-                  placeholder="Nombre y apellido del nuevo responsable"
-                  value={customAssignee}
-                  onChange={(e) => setCustomAssignee(e.target.value)}
-                  className="w-full text-xs border border-blue-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
-                />
-              )}
+              </datalist>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" />
-                <span>Estado Actual</span>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Talle de Camiseta Estimado
               </label>
               <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:bg-white focus:ring-1 focus:ring-blue-500 font-medium"
+                value={size}
+                onChange={(e) => setSize(e.target.value as TaskSize)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono font-semibold"
               >
-                {Object.entries(STATUS_CONFIG).map(([sKey, sCfg]) => (
-                  <option key={sKey} value={sKey}>
-                    {sCfg.label}
+                {Object.entries(SIZE_CONFIG).map(([k, cfg]) => (
+                  <option key={k} value={k}>
+                    {cfg.label} ({cfg.desc})
                   </option>
                 ))}
               </select>
@@ -389,9 +344,13 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
           {/* Progress Slider */}
           <div>
-            <div className="flex justify-between items-center text-xs font-semibold text-slate-700 mb-1">
-              <span>Progreso Real</span>
-              <span className="font-mono text-blue-600 tabular-nums">{progress}%</span>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-semibold text-slate-700 dark:text-slate-300">
+                Progreso Real
+              </label>
+              <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                {progress}%
+              </span>
             </div>
             <input
               type="range"
@@ -404,53 +363,96 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             />
           </div>
 
+          {/* Initiative, Epic, Commitment (only for parent tasks) */}
+          {!isSubtask && (
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Iniciativa
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Core Banking"
+                  value={initiative}
+                  onChange={(e) => setInitiative(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Épica
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Arquitectura"
+                  value={epic}
+                  onChange={(e) => setEpic(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Compromiso
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Q4 2026"
+                  value={commitment}
+                  onChange={(e) => setCommitment(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Notas y Criterios de Aceptación
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Notas / Bloqueos / Observaciones
             </label>
             <textarea
               rows={2}
-              placeholder="Detalles técnicos, dependencias o criterios de entrega..."
+              placeholder="Detalles técnicos, links o dependencias de Jira..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full text-xs border border-slate-200 rounded-lg p-2.5 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
             />
           </div>
-        </form>
 
-        {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-          <div>
-            {isEditing && onDeleteTask && (
+          {/* Actions Bar */}
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            {isEditing && onDeleteTask ? (
               <button
                 type="button"
                 onClick={handleDelete}
-                className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
+                className="px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors flex items-center gap-1 font-semibold"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Eliminar</span>
               </button>
+            ) : (
+              <div />
             )}
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-sm transition-colors"
-            >
-              {isEditing ? 'Guardar Cambios' : 'Crear Tarea'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors"
+              >
+                {isEditing ? 'Guardar Cambios' : 'Crear Tarea'}
+              </button>
+            </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
